@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -89,8 +90,8 @@ import com.example.domain.AiAnalysisDraft
 import com.example.domain.AiPipelineStep
 import com.example.domain.CivicLanguage
 import com.example.domain.PublicCivicReport
+import com.example.media.CameraXCaptureMode
 import com.example.media.CivicTtsHelper
-import com.example.media.MediaUtils
 import com.example.media.VoiceRecorderManager
 import com.example.ui.ComposerUiState
 import com.example.ui.components.ConfidencePill
@@ -110,6 +111,7 @@ fun ReportScreen(
     onLanguageChange: (CivicLanguage) -> Unit,
     onWardLandmarkChange: (String, String) -> Unit,
     onSampleScenario: (String, String, String) -> Unit,
+    onOpenCamera: (CameraXCaptureMode) -> Unit,
     onPhotoSelected: (Uri) -> Unit,
     onVideoSelected: (Uri) -> Unit,
     onClearMedia: () -> Unit,
@@ -131,7 +133,6 @@ fun ReportScreen(
     val context = LocalContext.current
     val recorder = remember { VoiceRecorderManager(context) }
     val ttsHelper = remember { CivicTtsHelper(context) }
-    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
     var permissionHint by remember { mutableStateOf<String?>(null) }
 
     DisposableEffect(Unit) {
@@ -152,15 +153,6 @@ fun ReportScreen(
             } else {
                 onPhotoSelected(uri)
             }
-        }
-    }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        val uri = pendingCameraUri
-        if (success && uri != null) {
-            onPhotoSelected(uri)
         }
     }
 
@@ -470,14 +462,8 @@ fun ReportScreen(
                     ) {
                         OutlinedButton(
                             onClick = {
-                                try {
-                                    val uri = MediaUtils.createCameraTempUri(context)
-                                    pendingCameraUri = uri
-                                    cameraLauncher.launch(uri)
-                                    permissionHint = null
-                                } catch (_: Exception) {
-                                    permissionHint = "Camera app unavailable on this device. Use Photo/Video upload instead."
-                                }
+                                permissionHint = null
+                                onOpenCamera(CameraXCaptureMode.PHOTO)
                             },
                             modifier = Modifier
                                 .minimumInteractiveComponentSize()
@@ -486,6 +472,20 @@ fun ReportScreen(
                             Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Camera")
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                permissionHint = null
+                                onOpenCamera(CameraXCaptureMode.VIDEO)
+                            },
+                            modifier = Modifier
+                                .minimumInteractiveComponentSize()
+                                .testTag("video_camera_button")
+                        ) {
+                            Icon(Icons.Default.Videocam, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Short Video")
                         }
 
                         OutlinedButton(

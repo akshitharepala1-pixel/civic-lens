@@ -3,4 +3,7 @@
     <cache-path
         name="civic_camera_images"
         path="camera_images/" />
+    <cache-path
+        name="civic_camera_videos"
+        path="camera_videos/" />
 </paths>

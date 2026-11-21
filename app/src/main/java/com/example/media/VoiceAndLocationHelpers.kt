@@ -215,14 +215,26 @@ object LocationHelper {
 }
 
 object MediaUtils {
-    fun createCameraTempUri(context: Context): Uri {
+    fun createCameraImageFile(context: Context): File {
         val dir = File(context.cacheDir, "camera_images").apply { mkdirs() }
-        val file = File(dir, "civic_capture_${System.currentTimeMillis()}.jpg")
+        return File(dir, "civic_capture_${System.currentTimeMillis()}.jpg")
+    }
+
+    fun createCameraVideoFile(context: Context): File {
+        val dir = File(context.cacheDir, "camera_videos").apply { mkdirs() }
+        return File(dir, "civic_video_${System.currentTimeMillis()}.mp4")
+    }
+
+    fun fileToProviderUri(context: Context, file: File): Uri {
         return FileProvider.getUriForFile(
             context,
             "${context.packageName}.fileprovider",
             file
         )
+    }
+
+    fun createCameraTempUri(context: Context): Uri {
+        return fileToProviderUri(context, createCameraImageFile(context))
     }
 
     suspend fun loadScaledBitmap(context: Context, uri: Uri, maxDim: Int = 1280): Bitmap? =

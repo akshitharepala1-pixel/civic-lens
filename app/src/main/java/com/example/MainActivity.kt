@@ -2,8 +2,12 @@ package com.example
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -57,6 +61,8 @@ import com.example.auth.signOut
 import com.example.data.CivicAiRepository
 import com.example.data.CivicFirestoreRepository
 import com.example.firebase.configureAppCheck
+import com.example.media.CameraXCaptureMode
+import com.example.media.CivicCameraXCaptureScreen
 import com.example.ui.CivicViewModel
 import com.example.ui.screens.ArchitectureAndGuardrailsSheet
 import com.example.ui.screens.AuthLandingScreen
@@ -176,6 +182,20 @@ private fun AuthenticatedCivicShell(
 
     var selectedTab by rememberSaveable { mutableStateOf(CivicTab.REPORT) }
     var showGuardrailsSheet by rememberSaveable { mutableStateOf(false) }
+    var activeCameraMode by rememberSaveable { mutableStateOf<CameraXCaptureMode?>(null) }
+
+    val cameraFallbackPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            val mime = context.contentResolver.getType(uri).orEmpty()
+            if (mime.startsWith("video/")) {
+                viewModel.attachVideo(context, uri)
+            } else {
+                viewModel.attachPhoto(context, uri)
+            }
+        }
+    }
 
     val composerState by viewModel.composer.collectAsStateWithLifecycle()
     val publicReportsState by viewModel.publicReportsState.collectAsStateWithLifecycle()
@@ -282,6 +302,7 @@ private fun AuthenticatedCivicShell(
                         onLanguageChange = viewModel::updateLanguage,
                         onWardLandmarkChange = viewModel::updateWardAndLandmark,
                         onSampleScenario = viewModel::applySampleScenario,
+                        onOpenCamera = { mode -> activeCameraMode = mode },
                         onPhotoSelected = { uri -> viewModel.attachPhoto(context, uri) },
                         onVideoSelected = { uri -> viewModel.attachVideo(context, uri) },
                         onClearMedia = viewModel::clearAttachedMedia,
@@ -324,5 +345,32 @@ private fun AuthenticatedCivicShell(
             onAskQuestion = viewModel::askPolicyAssistant,
             onDismiss = { showGuardrailsSheet = false }
         )
+    }
+
+    val cameraMode = activeCameraMode
+    if (cameraMode != null) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            CivicCameraXCaptureScreen(
+                initialMode = cameraMode,
+                onPhotoCaptured = { uri ->
+                    activeCameraMode = null
+                    viewModel.attachPhoto(context, uri)
+                },
+                onVideoCaptured = { uri ->
+                    activeCameraMode = null
+                    viewModel.attachVideo(context, uri)
+                },
+                onPickFromGallery = {
+                    activeCameraMode = null
+                    try {
+                        cameraFallbackPicker.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
+                        )
+                    } catch (_: Exception) {
+                    }
+                },
+                onDismiss = { activeCameraMode = null }
+            )
+        }
     }
 }
