@@ -1,0 +1,111 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private citizen profile and language/ward preferences isolated to the authenticated user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the owner." },
+        "displayName": { "type": "string", "description": "Citizen display name." },
+        "email": { "type": "string", "description": "Private email address." },
+        "preferredLanguage": { "type": "string", "description": "Preferred reporting language." },
+        "homeWard": { "type": "string", "description": "Optional default ward or locality." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last update." }
+      },
+      "required": ["userId", "displayName", "email", "preferredLanguage", "createdAt", "updatedAt"]
+    },
+    "PrivateCivicReport": {
+      "title": "PrivateCivicReport",
+      "description": "Citizen's private structured civic complaint package with multimodal evidence, AI analysis, CPGRAMS citations, and consent confirmation.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the submitting citizen." },
+        "trackingId": { "type": "string", "description": "Unique CivicLens complaint tracking ID." },
+        "title": { "type": "string", "description": "Short issue headline." },
+        "description": { "type": "string", "description": "Structured grievance description." },
+        "transcript": { "type": "string", "description": "Optional regional-language audio transcript." },
+        "language": { "type": "string", "description": "Detected or preferred citizen language." },
+        "category": { "type": "string", "enum": ["ROADS", "SANITATION", "WATER", "ELECTRICITY", "DRAINAGE", "PUBLIC_SAFETY", "OTHER"] },
+        "severity": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+        "riskScore": { "type": "integer", "description": "Computed civic hazard risk score from 0 to 100." },
+        "confidence": { "type": "number", "description": "AI classification confidence score from 0.0 to 1.0." },
+        "needsHumanReview": { "type": "boolean", "description": "True when AI confidence is below threshold and flagged for human review." },
+        "departmentName": { "type": "string", "description": "Suggested government/municipal department." },
+        "departmentCode": { "type": "string", "description": "CPGRAMS/municipal department routing code." },
+        "cpgramsMinistry": { "type": "string", "description": "Aligned CPGRAMS ministry or nodal agency." },
+        "citationTitle": { "type": "string", "description": "Official source citation title." },
+        "citationUrl": { "type": "string", "description": "Official government/policy reference URL." },
+        "wardName": { "type": "string", "description": "Ward, locality, or municipality." },
+        "approxLocation": { "type": "string", "description": "Landmark or street/area description." },
+        "latitude": { "type": "number", "description": "Optional coarse latitude." },
+        "longitude": { "type": "number", "description": "Optional coarse longitude." },
+        "clusterId": { "type": "string", "description": "Duplicate cluster key or linked public report ID." },
+        "hasPhoto": { "type": "boolean" },
+        "hasVideo": { "type": "boolean" },
+        "hasAudio": { "type": "boolean" },
+        "mediaAuthNote": { "type": "string", "description": "Probabilistic media evidence observation without absolute certainty claims." },
+        "status": { "type": "string", "enum": ["DRAFTED", "SUBMITTED", "IN_PROGRESS", "RESOLVED"] },
+        "userConsented": { "type": "boolean", "description": "Explicit citizen review and consent confirmation." },
+        "publicReportId": { "type": "string", "description": "Optional linked anonymized public report document ID." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last update." }
+      },
+      "required": [
+        "userId", "trackingId", "title", "description", "language", "category", "severity",
+        "riskScore", "confidence", "needsHumanReview", "departmentName", "departmentCode",
+        "cpgramsMinistry", "citationTitle", "citationUrl", "wardName", "approxLocation",
+        "clusterId", "hasPhoto", "hasVideo", "hasAudio", "mediaAuthNote", "status",
+        "userConsented", "createdAt", "updatedAt"
+      ]
+    },
+    "PublicCivicReport": {
+      "title": "PublicCivicReport",
+      "description": "Anonymized, aggregated civic issue cluster displayed on the public dashboard with zero personal PII.",
+      "type": "object",
+      "properties": {
+        "creatorUid": { "type": "string", "description": "Creator UID used exclusively for ownership authorization in security rules." },
+        "visibility": { "type": "string", "enum": ["PUBLIC_ANONYMIZED"] },
+        "trackingCode": { "type": "string", "description": "Anonymized public reference tracking ID." },
+        "title": { "type": "string", "description": "Anonymized civic issue summary." },
+        "category": { "type": "string", "enum": ["ROADS", "SANITATION", "WATER", "ELECTRICITY", "DRAINAGE", "PUBLIC_SAFETY", "OTHER"] },
+        "severity": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+        "riskScore": { "type": "integer", "description": "Hazard score 0 to 100." },
+        "confidence": { "type": "number", "description": "AI confidence 0.0 to 1.0." },
+        "needsHumanReview": { "type": "boolean" },
+        "departmentName": { "type": "string" },
+        "departmentCode": { "type": "string" },
+        "citationUrl": { "type": "string" },
+        "wardName": { "type": "string" },
+        "geoCellLat": { "type": "number", "description": "Coarsened grid latitude for hotspot clustering." },
+        "geoCellLng": { "type": "number", "description": "Coarsened grid longitude for hotspot clustering." },
+        "clusterKey": { "type": "string", "description": "Deterministic duplicate-clustering key." },
+        "reportCount": { "type": "integer", "description": "Number of citizen reports merged into this hotspot cluster." },
+        "slaHours": { "type": "integer", "description": "Department SLA target in hours." },
+        "status": { "type": "string", "enum": ["OPEN", "IN_PROGRESS", "RESOLVED"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "creatorUid", "visibility", "trackingCode", "title", "category", "severity", "riskScore",
+        "confidence", "needsHumanReview", "departmentName", "departmentCode", "citationUrl",
+        "wardName", "geoCellLat", "geoCellLng", "clusterKey", "reportCount", "slaHours",
+        "status", "createdAt", "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private citizen user profiles isolated per authenticated user."
+    },
+    "/users/{userId}/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/PrivateCivicReport" },
+      "description": "Private citizen civic reports containing full multimodal context and consent record."
+    },
+    "/public_reports/{publicReportId}": {
+      "schema": { "$ref": "#/entities/PublicCivicReport" },
+      "description": "Anonymized aggregated civic issue clusters for the public transparency dashboard and duplicate detection."
+    }
+  }
+}

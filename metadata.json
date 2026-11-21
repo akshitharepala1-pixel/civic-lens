@@ -1,0 +1,6 @@
+{
+  "name": "CivicLens",
+  "description": "Multimodal civic issue reporting with AI classification, CPGRAMS department routing, duplicate clustering, and an anonymized public dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

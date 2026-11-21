@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">CivicLens</string>
+    <string name="tagline">Voice-first, AI-assisted civic grievance reporting with CPGRAMS routing and anonymized public transparency.</string>
+    <string name="auth_cta_google">Continue with Google</string>
+    <string name="consent_statement">I have reviewed the AI-drafted complaint, verified the attached evidence, and consent to file this report and publish an anonymized summary to the public dashboard.</string>
+    <string name="guardrail_banner_low_conf">Low AI confidence (&lt;75%). Flagged for citizen &amp; human review before filing.</string>
+    <string name="privacy_pledge">Personal details remain private. Only anonymized ward, category, and cluster counts appear publicly.</string>
+    <string name="cpgrams_portal_url">https://pgportal.gov.in</string>
+</resources>

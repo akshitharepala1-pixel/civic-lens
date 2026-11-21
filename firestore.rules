@@ -1,0 +1,209 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidCategory(cat) {
+      return cat in ['ROADS', 'SANITATION', 'WATER', 'ELECTRICITY', 'DRAINAGE', 'PUBLIC_SAFETY', 'OTHER'];
+    }
+
+    function isValidSeverity(sev) {
+      return sev in ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+    }
+
+    function isValidPrivateStatus(status) {
+      return status in ['DRAFTED', 'SUBMITTED', 'IN_PROGRESS', 'RESOLVED'];
+    }
+
+    function isValidPublicStatus(status) {
+      return status in ['OPEN', 'IN_PROGRESS', 'RESOLVED'];
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+             data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+             data.preferredLanguage is string && data.preferredLanguage.size() >= 2 && data.preferredLanguage.size() <= 40 &&
+             (!('homeWard' in data) || (data.homeWard is string && data.homeWard.size() <= 80)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPrivateReport(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() <= 128 &&
+             data.trackingId is string && data.trackingId.size() >= 4 && data.trackingId.size() <= 32 &&
+             data.title is string && data.title.size() >= 3 && data.title.size() <= 160 &&
+             data.description is string && data.description.size() >= 5 && data.description.size() <= 2000 &&
+             (!('transcript' in data) || (data.transcript is string && data.transcript.size() <= 2000)) &&
+             data.language is string && data.language.size() >= 2 && data.language.size() <= 40 &&
+             isValidCategory(data.category) &&
+             isValidSeverity(data.severity) &&
+             data.riskScore is int && data.riskScore >= 0 && data.riskScore <= 100 &&
+             data.confidence is number && data.confidence >= 0.0 && data.confidence <= 1.0 &&
+             data.needsHumanReview is bool &&
+             data.departmentName is string && data.departmentName.size() >= 2 && data.departmentName.size() <= 160 &&
+             data.departmentCode is string && data.departmentCode.size() >= 2 && data.departmentCode.size() <= 40 &&
+             data.cpgramsMinistry is string && data.cpgramsMinistry.size() >= 2 && data.cpgramsMinistry.size() <= 160 &&
+             data.citationTitle is string && data.citationTitle.size() >= 2 && data.citationTitle.size() <= 200 &&
+             data.citationUrl is string && data.citationUrl.size() >= 5 && data.citationUrl.size() <= 300 &&
+             data.wardName is string && data.wardName.size() >= 2 && data.wardName.size() <= 100 &&
+             data.approxLocation is string && data.approxLocation.size() >= 2 && data.approxLocation.size() <= 200 &&
+             (!('latitude' in data) || (data.latitude is number && data.latitude >= -90.0 && data.latitude <= 90.0)) &&
+             (!('longitude' in data) || (data.longitude is number && data.longitude >= -180.0 && data.longitude <= 180.0)) &&
+             data.clusterId is string && data.clusterId.size() >= 1 && data.clusterId.size() <= 128 &&
+             data.hasPhoto is bool &&
+             data.hasVideo is bool &&
+             data.hasAudio is bool &&
+             data.mediaAuthNote is string && data.mediaAuthNote.size() <= 500 &&
+             isValidPrivateStatus(data.status) &&
+             data.userConsented is bool &&
+             (data.status == 'DRAFTED' || data.userConsented == true) &&
+             (!('publicReportId' in data) || (data.publicReportId is string && data.publicReportId.size() <= 128)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPublicReport(data) {
+      return data.creatorUid is string && data.creatorUid.size() >= 1 && data.creatorUid.size() <= 128 &&
+             data.visibility == 'PUBLIC_ANONYMIZED' &&
+             data.trackingCode is string && data.trackingCode.size() >= 4 && data.trackingCode.size() <= 32 &&
+             data.title is string && data.title.size() >= 3 && data.title.size() <= 160 &&
+             isValidCategory(data.category) &&
+             isValidSeverity(data.severity) &&
+             data.riskScore is int && data.riskScore >= 0 && data.riskScore <= 100 &&
+             data.confidence is number && data.confidence >= 0.0 && data.confidence <= 1.0 &&
+             data.needsHumanReview is bool &&
+             data.departmentName is string && data.departmentName.size() >= 2 && data.departmentName.size() <= 160 &&
+             data.departmentCode is string && data.departmentCode.size() >= 2 && data.departmentCode.size() <= 40 &&
+             data.citationUrl is string && data.citationUrl.size() >= 5 && data.citationUrl.size() <= 300 &&
+             data.wardName is string && data.wardName.size() >= 2 && data.wardName.size() <= 100 &&
+             data.geoCellLat is number && data.geoCellLat >= -90.0 && data.geoCellLat <= 90.0 &&
+             data.geoCellLng is number && data.geoCellLng >= -180.0 && data.geoCellLng <= 180.0 &&
+             data.clusterKey is string && data.clusterKey.size() >= 3 && data.clusterKey.size() <= 120 &&
+             data.reportCount is int && data.reportCount >= 1 && data.reportCount <= 10000 &&
+             data.slaHours is int && data.slaHours >= 1 && data.slaHours <= 720 &&
+             isValidPublicStatus(data.status) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'email', 'preferredLanguage', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'preferredLanguage', 'homeWard', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'preferredLanguage', 'homeWard', 'updatedAt']);
+
+      allow delete: if isOwner(userId);
+
+      match /reports/{reportId} {
+        allow get, list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(reportId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'trackingId', 'title', 'description', 'language', 'category',
+                           'severity', 'riskScore', 'confidence', 'needsHumanReview', 'departmentName',
+                           'departmentCode', 'cpgramsMinistry', 'citationTitle', 'citationUrl',
+                           'wardName', 'approxLocation', 'clusterId', 'hasPhoto', 'hasVideo',
+                           'hasAudio', 'mediaAuthNote', 'status', 'userConsented', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'trackingId', 'title', 'description', 'transcript', 'language',
+                           'category', 'severity', 'riskScore', 'confidence', 'needsHumanReview',
+                           'departmentName', 'departmentCode', 'cpgramsMinistry', 'citationTitle',
+                           'citationUrl', 'wardName', 'approxLocation', 'latitude', 'longitude',
+                           'clusterId', 'hasPhoto', 'hasVideo', 'hasAudio', 'mediaAuthNote',
+                           'status', 'userConsented', 'publicReportId', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidPrivateReport(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(reportId) &&
+                         existing().status != 'RESOLVED' &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidPrivateReport(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'title', 'description', 'category', 'severity', 'riskScore',
+                           'needsHumanReview', 'departmentName', 'departmentCode', 'status',
+                           'userConsented', 'publicReportId', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(reportId);
+      }
+    }
+
+    match /public_reports/{publicReportId} {
+      allow get, list: if isSignedIn() && resource.data.visibility == 'PUBLIC_ANONYMIZED';
+
+      allow create: if isSignedIn() &&
+                       isValidId(publicReportId) &&
+                       incoming().creatorUid == request.auth.uid &&
+                       incoming().visibility == 'PUBLIC_ANONYMIZED' &&
+                       incoming().reportCount == 1 &&
+                       incoming().keys().hasAll([
+                         'creatorUid', 'visibility', 'trackingCode', 'title', 'category', 'severity',
+                         'riskScore', 'confidence', 'needsHumanReview', 'departmentName', 'departmentCode',
+                         'citationUrl', 'wardName', 'geoCellLat', 'geoCellLng', 'clusterKey',
+                         'reportCount', 'slaHours', 'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'creatorUid', 'visibility', 'trackingCode', 'title', 'category', 'severity',
+                         'riskScore', 'confidence', 'needsHumanReview', 'departmentName', 'departmentCode',
+                         'citationUrl', 'wardName', 'geoCellLat', 'geoCellLng', 'clusterKey',
+                         'reportCount', 'slaHours', 'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidPublicReport(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(publicReportId) &&
+                       existing().status != 'RESOLVED' &&
+                       incoming().creatorUid == existing().creatorUid &&
+                       incoming().visibility == existing().visibility &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidPublicReport(incoming()) &&
+                       (
+                         (existing().creatorUid == request.auth.uid &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'severity', 'riskScore', 'reportCount', 'updatedAt'])) ||
+                         (incoming().reportCount == existing().reportCount + 1 &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['reportCount', 'updatedAt']))
+                       );
+
+      allow delete: if isSignedIn() && isValidId(publicReportId) && existing().creatorUid == request.auth.uid;
+    }
+  }
+}
